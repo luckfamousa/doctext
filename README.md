@@ -5,16 +5,17 @@ Delegates the heavylifting to other libraries and tools like [Apache Tika](https
 
 ## Usage
     
-    ```python
-    from doctext.Processor import Processor
+ ```python
+#!/usr/bin/env python
+from doctext.Processor import Processor
 
-    p = Processor()
-    print(p.run('/Users/me/some.pptx'))
+p = Processor()
+print(p.run('/Users/me/some.pptx'))
 
-    # or with Whisper (see https://openai.com/pricing)
-    p = Processor(openai_api_key='your-openai-api-key')
-    print(p.run('/Users/me/some.m4a'))
-    ```
+# or with Whisper (see https://openai.com/pricing)
+p = Processor(openai_api_key='your-openai-api-key')
+print(p.run('/Users/me/some.m4a'))
+```
 
 ## Introduction
 
