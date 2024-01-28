@@ -226,7 +226,8 @@ def extract_text(file_path: str, openai_api_key: str = None, tesseract_lang: str
     if mimetype and mimetype.startswith('image/'):
         return extract_text_from_image(file_path, tesseract_lang)
     if mimetype and mimetype.startswith('video/'):
-        return extract_text_from_video(file_path)
+        #return extract_text_from_video(file_path)
+        return extract_text_from_audio(file_path, openai_api_key)
     if mimetype and mimetype.startswith('audio/'):
         return extract_text_from_audio(file_path, openai_api_key)
     if mimetype and mimetype.startswith('application/pdf'):
