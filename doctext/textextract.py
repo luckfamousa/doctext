@@ -7,6 +7,8 @@ from termcolor import cprint
 import magic
 from openai import OpenAI
 import chardet
+from langdetect import detect
+from iso639 import Lang
 from doctext.utils import run_checked
 from doctext.Capabilities import Capabilities
 
@@ -83,11 +85,27 @@ def extract_text_postprocess(func):
     return wrapper
 
 def ocr(image_path, tesseract_lang: str = None):
+
+    _lang = 'eng'
+    if tesseract_lang is not None:
+        _lang = tesseract_lang
+
     try:
         img = Image.open(image_path)
-        if tesseract_lang is not None:
-            return pytesseract.image_to_string(img, lang=tesseract_lang)
-        return pytesseract.image_to_string(img)
+        text = pytesseract.image_to_string(img, lang=_lang)
+    
+        try:
+            # guess language from OCRed text
+            lang = Lang(detect(text)).pt3
+            # redo OCR with detected language, if different from first try
+            if lang != _lang:
+                text = pytesseract.image_to_string(img, lang=lang)
+        except:
+            pass
+
+        # finally return text
+        return text
+
     except Exception as e:
         print(f"Failed to OCR {image_path}")
         print(e)
