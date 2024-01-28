@@ -12,6 +12,10 @@ from doctext.Processor import Processor
 p = Processor()
 print(p.run('/Users/me/some.pptx'))
 
+# specify the language for tesseract
+p = Processor()
+print(p.run('/Users/me/some-german.png', tesseract_lang='deu'))
+
 # or with Whisper (see https://openai.com/pricing)
 p = Processor(openai_api_key='your-openai-api-key')
 print(p.run('/Users/me/some.m4a'))

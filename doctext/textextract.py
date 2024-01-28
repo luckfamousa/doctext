@@ -8,6 +8,7 @@ import magic
 from openai import OpenAI
 import chardet
 from doctext.utils import run_checked
+from doctext.Capabilities import Capabilities
 
 def is_plain_text(mimetype: str) -> bool:
     if mimetype and mimetype.startswith('text/'):
@@ -81,18 +82,20 @@ def extract_text_postprocess(func):
         return text
     return wrapper
 
-def ocr(image_path):
+def ocr(image_path, tesseract_lang: str = None):
     try:
         img = Image.open(image_path)
-        text = pytesseract.image_to_string(img)
-        return text
+        if tesseract_lang is not None:
+            print("Running OCR with language ", tesseract_lang)
+            return pytesseract.image_to_string(img, lang=tesseract_lang)
+        return pytesseract.image_to_string(img)
     except Exception as e:
         print(f"Failed to OCR {image_path}")
         print(e)
         return None
 
 
-def extract_text_from_image(image_path: str) -> str|None:
+def extract_text_from_image(image_path: str, tesseract_lang: str = None) -> str|None:
 
     def heic_to_png(src: str, dest: str) -> bool:
         if run_checked(["heif-convert", src, dest]):
@@ -145,12 +148,12 @@ def extract_text_from_image(image_path: str) -> str|None:
         with tempfile.TemporaryDirectory() as tmpdirname:
             tmpimg = os.path.join(tmpdirname, 'image.png')
             if to_png(image_path, tmpimg):
-                return ocr(tmpimg)
+                return ocr(tmpimg, tesseract_lang)
             else:
                 cprint(f"Cannot convert {image_path} to PNG", "red")
                 return None
 
-    return ocr(image_path)
+    return ocr(image_path, tesseract_lang)
     
 def extract_text_from_video(f: Path) -> str:
     text = []
@@ -195,7 +198,7 @@ def tika(file_path):
         return None
 
 @extract_text_postprocess
-def extract_text(file_path: str, openai_api_key: str = None) -> str|None:
+def extract_text(file_path: str, openai_api_key: str = None, tesseract_lang: str = None, capabilities: Capabilities = None) -> str|None:
 
     mime = magic.Magic(mime=True)
     mimetype = mime.from_file(file_path)
@@ -204,7 +207,7 @@ def extract_text(file_path: str, openai_api_key: str = None) -> str|None:
     if is_plain_text(mimetype):
         return extract_plain_text(file_path)
     if mimetype and mimetype.startswith('image/'):
-        return extract_text_from_image(file_path)
+        return extract_text_from_image(file_path, tesseract_lang)
     if mimetype and mimetype.startswith('video/'):
         return extract_text_from_video(file_path)
     if mimetype and mimetype.startswith('audio/'):
