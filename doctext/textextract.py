@@ -1,4 +1,4 @@
-import tempfile, subprocess, os
+import tempfile, shutil, os
 from pathlib import Path
 from tika import parser
 from PIL import Image
@@ -149,6 +149,19 @@ def extract_text_from_image(image_path: str) -> str|None:
             else:
                 cprint(f"Cannot convert {image_path} to PNG", "red")
                 return None
+    elif mimetype in ['image/jpeg','image/jpg'] and Path(image_path).suffix not in ['.jpeg', '.jpg']:
+        # tesseract seems to have problems with wrong file extensions
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpimg = os.path.join(tmpdirname, 'image.jpeg')
+            shutil.copyfile(image_path, tmpimg)
+            return ocr(tmpimg)
+    elif mimetype == 'image/png' and Path(image_path).suffix != '.png':
+        # tesseract seems to have problems with wrong file extensions
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpimg = os.path.join(tmpdirname, 'image.png')
+            shutil.copyfile(image_path, tmpimg)
+            return ocr(tmpimg)
+
     return ocr(image_path)
     
 def extract_text_from_video(f: Path) -> str:
