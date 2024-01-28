@@ -141,7 +141,7 @@ def extract_text_from_image(image_path: str) -> str|None:
     mimetype = mime.from_file(image_path)
 
     # convert video to sequence of images
-    if mimetype not in ['image/jpeg','image/png','image/jpg']:
+    if mimetype not in ['image/jpeg','image/png','image/jpg'] or Path(image_path).suffix == '.jpe':
         with tempfile.TemporaryDirectory() as tmpdirname:
             tmpimg = os.path.join(tmpdirname, 'image.png')
             if to_png(image_path, tmpimg):
@@ -149,18 +149,6 @@ def extract_text_from_image(image_path: str) -> str|None:
             else:
                 cprint(f"Cannot convert {image_path} to PNG", "red")
                 return None
-    elif mimetype in ['image/jpeg','image/jpg'] and Path(image_path).suffix not in ['.jpeg', '.jpg']:
-        # tesseract seems to have problems with wrong file extensions
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            tmpimg = os.path.join(tmpdirname, 'image.jpeg')
-            shutil.copyfile(image_path, tmpimg)
-            return ocr(tmpimg)
-    elif mimetype == 'image/png' and Path(image_path).suffix != '.png':
-        # tesseract seems to have problems with wrong file extensions
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            tmpimg = os.path.join(tmpdirname, 'image.png')
-            shutil.copyfile(image_path, tmpimg)
-            return ocr(tmpimg)
 
     return ocr(image_path)
     
