@@ -86,7 +86,6 @@ def ocr(image_path, tesseract_lang: str = None):
     try:
         img = Image.open(image_path)
         if tesseract_lang is not None:
-            print("Running OCR with language ", tesseract_lang)
             return pytesseract.image_to_string(img, lang=tesseract_lang)
         return pytesseract.image_to_string(img)
     except Exception as e:
