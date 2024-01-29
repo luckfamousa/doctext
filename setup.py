@@ -3,8 +3,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='doctext',
-    version='0.1.4',
+    version='0.1.5',
     packages=find_packages(),
+    install_requires=['tika', 'Pillow', 'pytesseract', 'termcolor', 'python-magic', 'openai', 'chardet', 'langdetect', 'iso639-lang'],
     license='MIT',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
