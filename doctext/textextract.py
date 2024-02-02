@@ -1,4 +1,4 @@
-import tempfile, shutil, os
+import tempfile, os, logging
 from pathlib import Path
 from tika import parser
 from PIL import Image
@@ -32,20 +32,71 @@ def is_plain_text(mimetype: str) -> bool:
         return True
     return False
 
-def extract_pdf(file_path: str) -> str|None:
+def extract_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
+
+    text = ""
+
     try:
-        return pdfminer.high_level.extract_text(file_path)
+        text = pdfminer.high_level.extract_text(file_path)
+        text = text.strip()
+        if len(text) > 0:
+            return text
     except Exception as e:
-        try:
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                tmpf = os.path.join(tmpdirname, 'text.txt')
-                if run_checked(["pdftotext", "-enc", "UTF-8", file_path, tmpf]):
-                    with open(tmpf, 'r') as file:
-                        return file.read()
-        except Exception as e:
-            print(f"Failed to extract text from {file_path}")
-            print(e)
-        return None
+        logging.warning(f"Failed to extract text from {file_path} using pdfminer")
+        # test if logging level is at leat WARNING
+        if logging.getLogger().getEffectiveLevel() <= logging.WARNING:
+            logging.exception(e)
+        
+    try:
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpf = os.path.join(tmpdirname, 'text.txt')
+            if run_checked(["pdftotext", "-enc", "UTF-8", file_path, tmpf]):
+                with open(tmpf, 'r') as file:
+                    text = file.read()
+                    text = text.strip()
+            if len(text) > 0:
+                return text
+    except Exception as e:
+        print(f"Failed to extract text from {file_path} using pdftotext")
+        print(e)
+
+    # last try: do OCR
+    return ocr_pdf(file_path, tesseract_lang)
+
+
+def do_ocr_pdf(file_path: str, tesseract_lang: str) -> str|None:
+    try:
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpf = os.path.join(tmpdirname, 'ocred.pdf')
+            cmd = ['ocrmypdf', '-l', tesseract_lang, '--redo-ocr', '-c', '--sidecar', '-', file_path, tmpf]
+            code, stdout, _ = run_checked(cmd, return_output=True)
+            if code:
+                return stdout
+    except Exception as e:
+        #print(f"Failed to OCR {file_path}")
+        #print(e)
+        pass
+
+    return None
+
+def ocr_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
+
+    _lang = 'eng'
+    if tesseract_lang is not None:
+        _lang = tesseract_lang
+
+    print(f"OCR PDF {file_path} with language {_lang}\n\n")
+    text = do_ocr_pdf(file_path, _lang)
+
+    if text is not None:
+        # guess language from OCRed text
+        lang = Lang(detect(text)).pt3
+        # redo OCR with detected language, if different from first try
+        if lang != _lang:
+            print(f"Redo OCR with detected language {lang}\n\n")
+            text = do_ocr_pdf(file_path, lang)
+
+    return text
 
 def extract_plain_text(file_path: str) -> str|None:
     try:
@@ -235,7 +286,7 @@ def extract_text(file_path: str, openai_api_key: str = None, tesseract_lang: str
     if mimetype and mimetype.startswith('audio/'):
         return extract_text_from_audio(file_path, openai_api_key)
     if mimetype and mimetype.startswith('application/pdf'):
-        return extract_pdf(file_path)
+        return extract_pdf(file_path, tesseract_lang)
 
     # try tika
     return tika(file_path)
