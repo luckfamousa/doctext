@@ -11,6 +11,7 @@ from langdetect import detect
 from iso639 import Lang
 from doctext.utils import run_checked
 from doctext.Capabilities import Capabilities
+import pdfminer.high_level
 
 def is_plain_text(mimetype: str) -> bool:
     if mimetype and mimetype.startswith('text/'):
@@ -33,15 +34,18 @@ def is_plain_text(mimetype: str) -> bool:
 
 def extract_pdf(file_path: str) -> str|None:
     try:
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            tmpf = os.path.join(tmpdirname, 'text.txt')
-            if run_checked(["pdftotext", "-enc", "UTF-8", file_path, tmpf]):
-                with open(tmpf, 'r') as file:
-                    return file.read()
+        return pdfminer.high_level.extract_text(file_path)
     except Exception as e:
-        print(f"Failed to extract text from {file_path}")
-        print(e)
-    return None
+        try:
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                tmpf = os.path.join(tmpdirname, 'text.txt')
+                if run_checked(["pdftotext", "-enc", "UTF-8", file_path, tmpf]):
+                    with open(tmpf, 'r') as file:
+                        return file.read()
+        except Exception as e:
+            print(f"Failed to extract text from {file_path}")
+            print(e)
+        return None
 
 def extract_plain_text(file_path: str) -> str|None:
     try:
