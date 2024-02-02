@@ -160,7 +160,7 @@ def ocr(image_path, tesseract_lang: str = None):
             if lang != _lang:
                 log.info(f"Ran OCR with language '{_lang}' but detected language '{lang}'. Redoing OCR.")
                 return pytesseract.image_to_string(img, lang=lang)
-        except:
+        except Exception as e:
             log_exception(log, e, f"Failed to OCR {image_path}")
             
         return text
