@@ -45,7 +45,7 @@ def extract_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
         if len(text) > 0:
             return text
     except Exception as e:
-        log_exception(e, f"Failed to extract text from '{file_path}' using pdfminer")
+        log_exception(log, e, f"Failed to extract text from '{file_path}' using pdfminer")
         
     try:
         log.info(f"Extracting text from '{file_path}' using pdftotext")
@@ -58,7 +58,7 @@ def extract_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
             if len(text) > 0:
                 return text
     except Exception as e:
-        log_exception(e, f"Failed to extract text from '{file_path}' using pdftotext")
+        log_exception(log, e, f"Failed to extract text from '{file_path}' using pdftotext")
 
     # last try: do OCR
     return ocr_pdf(file_path, tesseract_lang)
@@ -73,7 +73,7 @@ def do_ocr_pdf(file_path: str, tesseract_lang: str) -> str|None:
             if code:
                 return stdout
     except Exception as e:
-        log_exception(e, f"Failed to OCR {file_path}")
+        log_exception(log, e, f"Failed to OCR {file_path}")
 
     return None
 
@@ -115,7 +115,7 @@ def extract_plain_text(file_path: str) -> str|None:
         # Convert to UTF-8
         return content.encode('utf-8')
     except Exception as e:
-        log_exception(e, f"Failed to extract plain text from '{file_path}'")
+        log_exception(log, e, f"Failed to extract plain text from '{file_path}'")
 
     return None
 
@@ -161,12 +161,12 @@ def ocr(image_path, tesseract_lang: str = None):
                 log.info(f"Ran OCR with language '{_lang}' but detected language '{lang}'. Redoing OCR.")
                 return pytesseract.image_to_string(img, lang=lang)
         except:
-            log_exception(e, f"Failed to OCR {image_path}")
+            log_exception(log, e, f"Failed to OCR {image_path}")
             
         return text
 
     except Exception as e:
-        log_exception(e, f"Failed to OCR {image_path}")
+        log_exception(log, e, f"Failed to OCR {image_path}")
     
     return None
 
@@ -188,7 +188,7 @@ def extract_text_from_image(image_path: str, tesseract_lang: str = None) -> str|
                 img.save(dest, 'PNG')
                 return os.path.exists(dest)
         except Exception as e:
-            log_exception(e, f"Failed to convert image {image_path} with PIL.")
+            log_exception(log, e, f"Failed to convert image {image_path} with PIL.")
         return False
 
     def any_to_png_im(src: str, dest: str) -> bool:
@@ -266,7 +266,7 @@ def extract_text_from_audio(f: Path, openai_api_key: str) -> str|None:
                     response_format="text"
                 )
     except Exception as e:
-        log_exception(e, f"Cannot extract text from {str(f)}\n{ex}")
+        log_exception(log, e, f"Cannot extract text from {str(f)}\n{ex}")
     return None
 
 def tika(file_path):
@@ -277,7 +277,7 @@ def tika(file_path):
         parsed = parser.from_file(file_path)        
         return parsed['content']
     except Exception as e:
-        log_exception(e, f"Failed to extract text with tika from {file_path}")        
+        log_exception(log, e, f"Failed to extract text with tika from {file_path}")        
     return None
 
 @extract_text_postprocess
