@@ -8,6 +8,10 @@ Delegates the heavylifting to other libraries and tools like [Apache Tika](https
  ```python
 #!/usr/bin/env python
 from doctext.Processor import Processor
+import logging
+
+# set logging level to INFO to see what's going on
+logging.basicConfig(level=logging.INFO)
 
 p = Processor()
 print(p.run('/Users/me/some.pptx'))
