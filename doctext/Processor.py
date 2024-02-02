@@ -6,8 +6,10 @@ from doctext.Capabilities import Capabilities
 from doctext.textextract import extract_text
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-logging.debug('This will get logged')
+#logging.basicConfig(level=logging.DEBUG)
+#logging.debug('This will get logged')
+
+print(f"Logging level: {logging.getLogger().getEffectiveLevel()}")
 
 class Processor:
     def __init__(self, openai_api_key=None, tesseract_lang='deu'):

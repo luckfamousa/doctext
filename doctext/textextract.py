@@ -13,6 +13,8 @@ from doctext.utils import run_checked, log_exception
 from doctext.Capabilities import Capabilities
 import pdfminer.high_level
 
+log = logging.getLogger("doctext.textextract")
+
 def is_plain_text(mimetype: str) -> bool:
     if mimetype and mimetype.startswith('text/'):
         return True
@@ -37,14 +39,16 @@ def extract_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
     text = ""
 
     try:
+        log.info(f"Extracting text from '{file_path}' using pdfminer")
         text = pdfminer.high_level.extract_text(file_path)
         text = text.strip()
         if len(text) > 0:
             return text
     except Exception as e:
-        log_exception(e, f"Failed to extract text from {file_path} using pdfminer")
+        log_exception(e, f"Failed to extract text from '{file_path}' using pdfminer")
         
     try:
+        log.info(f"Extracting text from '{file_path}' using pdftotext")
         with tempfile.TemporaryDirectory() as tmpdirname:
             tmpf = os.path.join(tmpdirname, 'text.txt')
             if run_checked(["pdftotext", "-enc", "UTF-8", file_path, tmpf]):
@@ -54,7 +58,7 @@ def extract_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
             if len(text) > 0:
                 return text
     except Exception as e:
-        log_exception(e, f"Failed to extract text from {file_path} using pdftotext")
+        log_exception(e, f"Failed to extract text from '{file_path}' using pdftotext")
 
     # last try: do OCR
     return ocr_pdf(file_path, tesseract_lang)
@@ -75,11 +79,12 @@ def do_ocr_pdf(file_path: str, tesseract_lang: str) -> str|None:
 
 def ocr_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
 
+    log.info(f"Extracting text from '{file_path}' using ocrmypdf")
+
     _lang = 'eng'
     if tesseract_lang is not None:
         _lang = tesseract_lang
 
-    logging.info(f"OCR PDF {file_path} with language {_lang}\n\n")
     text = do_ocr_pdf(file_path, _lang)
 
     if text is not None:
@@ -87,12 +92,15 @@ def ocr_pdf(file_path: str, tesseract_lang: str = None) -> str|None:
         lang = Lang(detect(text)).pt3
         # redo OCR with detected language, if different from first try
         if lang != _lang:
-            logging.info(f"Redo OCR with detected language {lang}\n\n")
+            log.info(f"Detected language '{lang}' but ran OCR with language '{_lang}'. Redoing OCR.")
             text = do_ocr_pdf(file_path, lang)
 
     return text
 
 def extract_plain_text(file_path: str) -> str|None:
+
+    log.info(f"Extracting plain text from '{file_path}'")
+
     try:
         # Detect encoding
         with open(file_path, 'rb') as file:
@@ -107,7 +115,7 @@ def extract_plain_text(file_path: str) -> str|None:
         # Convert to UTF-8
         return content.encode('utf-8')
     except Exception as e:
-        log_exception(e, f"Failed to extract plain text from {file_path}")
+        log_exception(e, f"Failed to extract plain text from '{file_path}'")
 
     return None
 
@@ -117,7 +125,7 @@ def convert_to_string_if_bytes(text):
         if detected_encoding:
             return text.decode(detected_encoding)
         else:
-            logging.warning("Unable to detect encoding for byte conversion. Using UTF-8.")
+            log.warning("Unable to detect encoding for byte conversion. Using UTF-8.")
             return text.decode('utf-8')
     else:
         return text
@@ -135,6 +143,8 @@ def extract_text_postprocess(func):
 
 def ocr(image_path, tesseract_lang: str = None):
 
+    log.info(f"Running OCR with pytesseract on '{image_path}'")
+
     _lang = 'eng'
     if tesseract_lang is not None:
         _lang = tesseract_lang
@@ -148,7 +158,7 @@ def ocr(image_path, tesseract_lang: str = None):
             lang = Lang(detect(text)).pt3
             # redo OCR with detected language, if different from first try
             if lang != _lang:
-                logging.info(f"Ran OCR with language '{_lang}' but detected language '{lang}'. Redoing OCR.")
+                log.info(f"Ran OCR with language '{_lang}' but detected language '{lang}'. Redoing OCR.")
                 return pytesseract.image_to_string(img, lang=lang)
         except:
             log_exception(e, f"Failed to OCR {image_path}")
@@ -216,12 +226,15 @@ def extract_text_from_image(image_path: str, tesseract_lang: str = None) -> str|
             if to_png(image_path, tmpimg):
                 return ocr(tmpimg, tesseract_lang)
             else:
-                logging.warning(f"Cannot convert {image_path} to PNG")
+                log.warning(f"Cannot convert '{image_path}' to PNG")
                 return None
 
     return ocr(image_path, tesseract_lang)
     
 def extract_text_from_video(f: Path) -> str:
+
+    log.info(f"Extracting text from '{f}' using ffmpeg")
+
     text = []
     with tempfile.TemporaryDirectory() as tmpdirname:
         if run_checked(["ffmpeg", "-i", str(f), f"{tmpdirname}/image%d.jpg"]):
@@ -230,13 +243,16 @@ def extract_text_from_video(f: Path) -> str:
                 try:
                     text.append(ocr(image))
                 except Exception as ex:
-                    logging.warning(f"Cannot extract text from {image}\n{ex}")
+                    log.warning(f"Cannot extract text from {image}\n{ex}")
         return " ".join(text)
 
-def extract_text_from_audio(f: Path, openai_api_key: str) -> str|None:    
+def extract_text_from_audio(f: Path, openai_api_key: str) -> str|None: 
+
+    log.info(f"Extracting text from '{f}' using OpenAI")
+
     # check if we have an API key
     if openai_api_key is None:
-        logging.warning("No OpenAI API key provided. Skipping audio to text conversion.")
+        log.warning("No OpenAI API key provided. Skipping audio to text conversion.")
         return None
 
     client = OpenAI(api_key=str(openai_api_key))    
@@ -254,6 +270,9 @@ def extract_text_from_audio(f: Path, openai_api_key: str) -> str|None:
     return None
 
 def tika(file_path):
+
+    log.info(f"Extracting text from '{file_path}' using tika")
+
     try:
         parsed = parser.from_file(file_path)        
         return parsed['content']
