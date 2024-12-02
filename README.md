@@ -37,5 +37,5 @@ pip install doctext
 ```
 
 ```bash
-brew install ffmpeg imagemagick poppler libheif dcraw
+brew install ffmpeg imagemagick poppler libheif dcraw ocrmypdf
 ```

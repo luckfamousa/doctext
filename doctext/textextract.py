@@ -12,6 +12,7 @@ from iso639 import Lang
 from doctext.utils import run_checked, log_exception
 from doctext.Capabilities import Capabilities
 import pdfminer.high_level
+from docling.document_converter import DocumentConverter
 
 log = logging.getLogger("doctext.textextract")
 
@@ -282,6 +283,15 @@ def tika(file_path):
 
 @extract_text_postprocess
 def extract_text(file_path: str, openai_api_key: str = None, tesseract_lang: str = None, capabilities: Capabilities = None) -> str|None:
+
+    # first try docling (will handle most cases)
+    try:
+        converter = DocumentConverter()
+        result = converter.convert(file_path)
+        return result.document.export_to_markdown()
+    except Exception as e:
+        log_exception(log, e, f"Failed to extract text from '{file_path}' using docling")
+        
 
     mime = magic.Magic(mime=True)
     mimetype = mime.from_file(file_path)
