@@ -30,6 +30,8 @@ print(p.run('/Users/me/some.m4a'))
 Why yet another library for extracting text from documents?
 Because [textract](https://github.com/deanmalmgren/textract) seems to be more or less abandoned and requires some outdated versions of dependencies. Also it does not support all the file formats I need. [Apache Tika](https://tika.apache.org/) is great but surprisingly did not support some of the file formats I needed. So I decided to write a wrapper around a [wrapper](https://github.com/chrismattmann/tika-python).
 
+Update: I added support for [docling](https://github.com/DS4SD/docling) as the default first choice for every file. If you are not going to extract text from audio or video files, you should be fine with docling and do not use my library as a wrapper around it. 
+
 ## Installation
 
 ```bash
