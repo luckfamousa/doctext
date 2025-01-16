@@ -1,5 +1,7 @@
 # doctext
 
+[![Affiliated with RTG WisPerMed](https://img.shields.io/badge/Affiliated-RTG%202535%20WisPerMed-blue)](https://wispermed.org/)
+
 Extract text from all kinds of documents.
 Delegates the heavylifting to other libraries and tools like [Apache Tika](https://tika.apache.org/), [tesseract](https://github.com/tesseract-ocr/tesseract) and many more.
 
